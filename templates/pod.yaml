@@ -14,7 +14,7 @@ spec:
     - name: {{ .Values.global.image.pullSecrets }}
   containers:
     - name: {{ include "zoho.fullname" . }}
-      image: zoho-image
+      image: docker.pkg.github.com/lpmatos/zoho-dynamic-chart/zoho:latest
       imagePullPolicy: {{ default "" .Values.global.image.pullPolicy | quote }}
       command: [ "/bin/bash", "-c", "--" ]
       args: [ "/usr/local/bin/zoho" ]
