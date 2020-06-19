@@ -1,0 +1,61 @@
+{{- $databases := .Values.databases -}}
+{{- $typeDeployment := .Values.deployment.type.name -}}
+
+{{- if eq $typeDeployment "Pod" }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "zoho.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "zoho.labels" . | nindent 4 }}
+spec:
+  imagePullSecrets:
+    - name: {{ .Values.global.image.pullSecrets }}
+  containers:
+    - name: {{ include "zoho.fullname" . }}
+      image: registry.stefanini.io/shared/common/images:zoho-latest
+      imagePullPolicy: {{ default "" .Values.global.image.pullPolicy | quote }}
+      command: [ "/bin/bash", "-c", "--" ]
+      args: [ "/usr/local/bin/zoho" ]
+      resources: {{- toYaml .Values.resources | nindent 12 }}
+      env:
+        - name: AUTHTOKEN
+          valueFrom: 
+            secretKeyRef:
+              name: zoho-token
+              key: zoho-token
+        - name: USER_EMAIL_ADDRESS
+          value: {{ include "zoho.email.user" . }}
+        - name: DBOWNER_EMAIL_ADDRESS
+          value: {{ include "zoho.email.dbowner" . }}      
+{{- if $databases }}
+      volumeMounts:
+{{- range $index, $value := $databases }}
+{{- $index := add $index 1 }}
+        - name: zoho-volume-upload
+          mountPath: /opt/zoho/bin/UploadFromDB_{{ $index }}.sh
+          subPath: UploadFromDB_{{ $index }}.sh
+        - name: zoho-volume-queries
+          mountPath: /opt/zoho/conf/database_sql_queries_{{ $index }}.xml
+          subPath: database_sql_queries_{{ $index }}.xml
+        - name: zoho-volume-connection
+          mountPath: /opt/zoho/conf/database_connection_params_{{ $index }}.conf
+          subPath: database_connection_params_{{ $index }}.conf
+{{- else }}
+{{- required "We need databases list!" $databases -}}
+{{- end }}
+  volumes:
+    - name: zoho-volume-upload
+      configMap:
+        name: zoho-upload
+        defaultMode: 0777
+    - name: zoho-volume-queries
+      configMap:
+        name: zoho-queries
+    - name: zoho-volume-connection
+      secret:
+        secretName: zoho-connection
+{{- end }}
+{{- end }}
+---

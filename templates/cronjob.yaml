@@ -1,0 +1,86 @@
+{{- $databases := .Values.databases -}}
+{{- $typeDeployment := .Values.deployment.type.name -}}
+{{- $specDeployment := .Values.deployment.type.spec -}}
+
+{{- if eq $typeDeployment "Cronjob" }}
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ include "zoho.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "zoho.labels" . | nindent 4 }}
+spec:
+{{- if $specDeployment }}
+{{- with $specDeployment }}
+  schedule: {{ .schedule | default "0 6 * * *" }}
+  successfulJobsHistoryLimit: {{ .successfulJobsHistoryLimit | default 3 }}
+  failedJobsHistoryLimit: {{ .failedJobsHistoryLimit | default 1 }}
+{{- end }}
+{{- else }}
+  schedule: "0 6 * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+{{- end }}
+  jobTemplate:
+    spec:
+{{- if $specDeployment }}
+{{- with $specDeployment }}
+      backoffLimit: {{ .backoffLimit | default 0 }}
+      activeDeadlineSeconds: {{ .activeDeadlineSeconds | default 100 }}
+{{- end }}
+{{- else }}
+      backoffLimit: 0
+      activeDeadlineSeconds: 100
+{{- end }}
+      template:
+        spec:
+          imagePullSecrets:
+            - name: {{ .Values.global.image.pullSecrets }}
+          restartPolicy: OnFailure 
+          containers:
+            - name: {{ include "zoho.fullname" . }}
+              image: registry.stefanini.io/shared/common/images:zoho-latest
+              imagePullPolicy: {{ default "" .Values.global.image.pullPolicy | quote }}
+              command: [ "/bin/bash", "-c", "--" ]
+              args: [ "/usr/local/bin/zoho" ]
+              env:
+                - name: AUTHTOKEN
+                  valueFrom: 
+                    secretKeyRef:
+                      name: zoho-token
+                      key: zoho-token
+                - name: USER_EMAIL_ADDRESS
+                  value: {{ include "zoho.email.user" . }}
+                - name: DBOWNER_EMAIL_ADDRESS
+                  value: {{ include "zoho.email.dbowner" . }}
+{{- if $databases }}
+              volumeMounts:
+{{- range $index, $value := $databases }}
+{{- $index := add $index 1 }}
+                - name: zoho-volume-upload
+                  mountPath: /opt/zoho/bin/UploadFromDB_{{ $index }}.sh
+                  subPath: UploadFromDB_{{ $index }}.sh
+                - name: zoho-volume-queries
+                  mountPath: /opt/zoho/conf/database_sql_queries_{{ $index }}.xml
+                  subPath: database_sql_queries_{{ $index }}.xml
+                - name: zoho-volume-connection
+                  mountPath: /opt/zoho/conf/database_connection_params_{{ $index }}.conf
+                  subPath: database_connection_params_{{ $index }}.conf
+{{- else }}
+{{- required "We need databases list!" $databases -}}
+{{- end }}
+          volumes:
+            - name: zoho-volume-upload
+              configMap:
+                name: zoho-upload
+                defaultMode: 0777
+            - name: zoho-volume-queries
+              configMap:
+                name: zoho-queries
+            - name: zoho-volume-connection
+              secret:
+                secretName: zoho-connection
+{{- end }}      
+{{- end }}
+---

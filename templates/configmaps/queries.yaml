@@ -1,0 +1,47 @@
+{{- $globalZohoDatabase := .Values.zoho.database -}}
+{{- $databases := .Values.databases -}}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zoho-queries
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{ include "zoho.labels" . | nindent 4}}
+data:
+{{- if $databases }}
+{{- range $index, $value := $databases }}
+{{- $index := add $index 1 -}}
+{{- $databaseName := .name -}}
+{{- $tables := .tables -}}
+{{- if and $databaseName $tables }}
+  database_sql_queries_{{ $index }}.xml: |-
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <Queries>
+{{- range $tables }}
+{{- $tableName := .name -}}
+{{- $zohoInformation := .zoho -}}
+{{- if $tableName }}
+{{- if $zohoInformation }}
+{{- with $zohoInformation }}
+    <Query dbname={{ .database | default $globalZohoDatabase | quote }} tablename={{ .tablename | default .name | quote }} importtype="TRUNCATEADD">
+{{- end }}
+{{- else }}
+    <Query dbname={{ $globalZohoDatabase | quote }} tablename={{ $tableName | quote }} importtype="TRUNCATEADD">
+{{- end }}
+    SELECT * FROM {{ $tableName }};
+    </Query>
+{{- else }}
+{{- required "We need tablename!" $tableName -}}
+{{- end }}
+{{- end }}
+    </Queries>
+{{- end }}
+{{- else }}
+{{- required "We need database name!" $databaseName -}}
+{{- required "We need tables list!" $tables -}}
+{{- end }}
+{{- else }}
+{{- required "We need databases list!" $databases -}}
+{{- end }}
+---

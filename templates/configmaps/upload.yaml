@@ -1,0 +1,97 @@
+{{- $databases := .Values.databases -}}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zoho-upload
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{ include "zoho.labels" . | nindent 4}}
+data:
+{{- if $databases }}
+{{- range $index, $value := $databases }}
+{{- $index := add $index 1 -}}
+{{- $databaseName := .name -}}
+{{- if $databaseName }}
+  UploadFromDB_{{ $index }}.sh: |-
+    # $Id$
+    if [ "$2" = "-A" -a "$4" = "-D" ]
+    then
+      if [ $# -ne 5 -a "$6" != "-M" ]
+      then
+          echo "Usage  : sh $0 <UserEmailAddress> -A <authtoken>  -D <AccountAdminEmailAddress>"
+          exit
+      fi
+
+    elif [ "$2" = "-A" -a "$4" != "-D" ]
+    then
+      if [ $# -ne 3 -a "$4" != "-M" ]
+      then
+          echo "Usage  : sh $0 <UserEmailAddress> -A <authtoken>"
+          exit
+      fi
+    elif [ "$2" != "-A" -a $# -ne 6 -a $# -ne 4 -a $# -ne 2 -a $# -ne 0 ]
+    then
+      echo ""
+      echo "Usage  : sh $0 [UserEmailAddress] [<-A authtoken>/<password>] [-D AccountAdminEmailAddress]"
+      echo "Example:"
+      echo ""
+      echo "        sh $0 <UserEmailAddress> -A <authtoken> -D <AccountAdminEmailAddress>"
+      echo "        sh $0 <UserEmailAddress> -A <authtoken>"
+      echo "        sh $0 <UserEmailAddress> <password> -D <AccountAdminEmailAddress>"
+      echo "        sh $0 <UserEmailAddress> <password>"
+      echo "        sh $0 "
+      echo ""
+      exit
+    fi
+
+    cd "`dirname "${0}"`/.."
+
+    . bin/setEnv.sh
+
+
+    TEMP_DIR=temp
+    rm -f $TEMP_DIR/queryOutput_*
+    rm -fr $TEMP_DIR/Query_*
+    rm -fr logs/tmp_*
+
+    export JAVA_OPTS="$JAVA_OPTS -DCONN_PARAMS_FILE=conf/database_connection_params_{{ $index }}.conf -DIMPORT_OPTIONS_FILE=conf/database_sql_queries_{{ $index }}.xml -DTEMP_DIR=$TEMP_DIR -DTESTRUN=false"
+
+    isAdvancedTool=1
+    modeFound=0
+    for arg in "$@"
+    do
+      if [ $modeFound -eq 1 -a "$arg" = "old" ]
+      then
+      isAdvancedTool=0
+      fi
+      if [ "$arg" = "-M" ]
+      then
+      modeFound=1
+      fi
+    done
+
+    if [ $modeFound -eq 1 -a $# -eq 2 ]
+    then
+      if [ $isAdvancedTool -eq 1 ]
+      then
+          $JAVABIN $JAVA_OPTS  com.adventnet.zoho.client.report.advancedtool.ZohoReportUploadDataFromDB
+      else
+          $JAVABIN $JAVA_OPTS  com.adventnet.zoho.client.report.tool.ZohoReportUploadDataFromDB
+      fi   
+    else
+      if [ $isAdvancedTool -eq 1 ]
+      then
+          $JAVABIN $JAVA_OPTS  com.adventnet.zoho.client.report.advancedtool.ZohoReportUploadDataFromDB $1 $2 $3 $4 $5
+      else
+          $JAVABIN $JAVA_OPTS  com.adventnet.zoho.client.report.tool.ZohoReportUploadDataFromDB $1 $2 $3 $4 $5
+      fi
+    fi
+{{- else }}
+{{- required "We need database name!" $databaseName -}}
+{{- end }}
+{{- end }}
+{{- else }}
+{{- required "We need databases list!" $databases -}}
+{{- end }}
+---

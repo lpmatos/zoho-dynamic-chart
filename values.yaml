@@ -1,0 +1,98 @@
+# Available parameters and their default values to this chart.
+
+# ==============================================================================
+# GLOBAL DEFINITION
+# ==============================================================================
+
+#
+# Legend:
+#   - group: GitLab Group Reference.
+#   - subGroup: GitLab Sub Group Reference.
+#   - image.tag: GitLab Image Tag Reference.
+#   - image.registry: Your Registry.
+#   - image.pullPolicy: Update image policies.
+#   - image.pullSecrets: Registration key for a pod - It would be a secret to our registration.
+#
+global:
+  group: shared
+  subGroup: common
+  image:
+    tag: zoho
+    registry: registry.stefanini.io
+    pullPolicy: IfNotPresent
+    pullSecrets: docker-secret-key
+  connection: {}
+    # type: postgresql
+    # hostname: localhost
+    # port: 5432
+    # user: postgres
+    # password: 123456Q!
+
+
+# ==============================================================================
+# OVER RIDE DEFINITION
+# ==============================================================================
+
+nameOverride: 
+fullnameOverride: zoho-upload
+
+# ==============================================================================
+# RESOURCES DEFINITION
+# ==============================================================================
+
+# We usually recommend not to specify default resources and to leave this as a conscious
+# choice for the user. This also increases chances charts run on environments with little
+# resources, such as Minikube. If you do want to specify resources, uncomment the following
+# lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+##
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+# ==============================================================================
+# ZOHO DEFINITION
+# ==============================================================================
+
+zoho:
+  token: 
+  email:
+    user: 
+    dbowner: 
+  database: DEFAULT
+
+# ==============================================================================
+# DATABASES DEFINITION
+# ==============================================================================
+
+# Your databases and tables.
+##
+databases: {}
+  # - name: manager
+  #   connection: {}
+  #   tables:
+  #     - name: permission
+  #       zoho: {}
+  #     - name: person
+  #     - name: role
+
+# ==============================================================================
+# DEPLOYMENT DEFINITION
+# ==============================================================================
+
+deployment:
+  type:
+  # type: 
+  #   name: Deployment
+  # type: 
+  #   name: Cronjob
+  #   spec:
+  #     schedule: "0/30 * * * *"
+  #     backoffLimit: 4
+  #     failedJobsHistoryLimit: 1
+  #     successfulJobsHistoryLimit: 3
+  #     activeDeadlineSeconds: 100
+  #     ttlSecondsAfterFinished: 100
+  # type:
+  #   name: Pod
