@@ -40,7 +40,7 @@ spec:
           restartPolicy: OnFailure 
           containers:
             - name: {{ include "zoho.fullname" . }}
-              image: registry.stefanini.io/shared/common/images:zoho-latest
+              image: zoho-image
               imagePullPolicy: {{ default "" .Values.global.image.pullPolicy | quote }}
               command: [ "/bin/bash", "-c", "--" ]
               args: [ "/usr/local/bin/zoho" ]
