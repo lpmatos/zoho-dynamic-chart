@@ -129,8 +129,26 @@ helm install --debug --dry-run . --generate-name
 ### Exemple Answers 
 
 ```yaml
-global:
-  replicaCount: 2
+databases:
+  - name: manager
+    tables:
+      - name: permission
+      - name: person
+      - name: role
+  - name: interview
+    tables:
+      - name: interview
+      - name: status
+        zoho:
+          tablename: status_interview
+  - name: professional
+    tables:
+      - name: users
+      - name: roles
+      - name: managers
+      - name: status
+      - name: cells
+      - name: branchs
 ```
 
 ### Helm
