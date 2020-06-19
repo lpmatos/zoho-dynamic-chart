@@ -12,6 +12,7 @@
 #   - image.registry: Your Registry.
 #   - image.pullPolicy: Update image policies.
 #   - image.pullSecrets: Registration key for a pod - It would be a secret to our registration.
+#   - connection: Global Zoho Connection Params Database.
 #
 global:
   group: shared
@@ -28,12 +29,12 @@ global:
     # user: postgres
     # password: 123456Q!
 
+## String to partially override zoho.fullname template (will maintain the release name)
+##
+# nameOverride:
 
-# ==============================================================================
-# OVER RIDE DEFINITION
-# ==============================================================================
-
-nameOverride: 
+## String to fully override zoho.fullname template
+##
 fullnameOverride: zoho-upload
 
 # ==============================================================================
@@ -55,12 +56,14 @@ resources:
 # ZOHO DEFINITION
 # ==============================================================================
 
-zoho:
-  token: 
-  email:
-    user: 
-    dbowner: 
-  database: DEFAULT
+# Zoho Common Params.
+##
+zoho: {}
+  # token: 
+  # email:
+  #   user: 
+  #   dbowner: 
+  # database: DEFAULT
 
 # ==============================================================================
 # DATABASES DEFINITION
@@ -81,8 +84,7 @@ databases: {}
 # DEPLOYMENT DEFINITION
 # ==============================================================================
 
-deployment:
-  type:
+deployment: {}
   # type: 
   #   name: Deployment
   # type: 
