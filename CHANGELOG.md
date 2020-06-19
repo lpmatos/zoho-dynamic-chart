@@ -24,6 +24,7 @@ All important changes to this project will be added to this file! This changelog
   * _default.tpl
   * _zoho.tpl
 * Adding templates labels and call in metadata.
+* Dockerfile Zoho with script, assests and Makefile.
 
 ## 1.0.0 - [16-06-2020]
 

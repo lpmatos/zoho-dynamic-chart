@@ -1,0 +1,118 @@
+# ==============================================================================
+## DESCRIPTION: Zoho Upload.
+## NAME: zoho
+## AUTHOR: Lucca Pessoa da Silva Matos
+## DATE: 16.06.2020
+## RUNNING:
+##  > chmod +x zoho && bash zoho
+# ==============================================================================
+
+# ==============================================================================
+# OUTPUT-COLORING
+# ==============================================================================
+
+# High Intensity
+RED="\033[0;91m"         # Red
+GREEN="\033[0;92m"       # Green
+YELLOW="\033[0;93m"      # Yellow
+BLUE="\033[0;94m"        # Blue
+NC="\033[0;97m"          # White
+
+# ==============================================================================
+# VALUES
+# ==============================================================================
+
+VERSION="1.0.0"
+OS=`uname`
+[ "${OS}" = "Linux" ] && DATE_CMD="date" || DATE_CMD="gdate"
+DATE_INFO=$(${DATE_CMD} +"%Y-%m-%d %T")
+DATE_INFO_SHORT=$(${DATE_CMD} +"%A %B")
+USER=$(whoami)
+
+SUCESS=0
+BAD=1
+
+[ ! "${ZOHO_HOME}" ] && [ "${ZOHO_HOME}" == "" ] && ZOHO_HOME="/opt/zoho"
+
+ZOHO_CONF="${ZOHO_HOME}/conf"
+ZOHO_BIN="${ZOHO_HOME}/bin"
+COMMON_PARAMS="${ZOHO_CONF}/common_params.conf"
+
+# ==============================================================================
+# FUNCTIONS
+# ==============================================================================
+
+function Status() {
+  echo -e "\n[ZOHO UPLOAD]: ${1}"
+}
+
+function Abort(){
+  echo >&2 '
+  ***************
+  *** ABORTED ***
+  ***************
+  '
+  echo -e "${RED}An error has occurred. Going out...${NC}\n" >&2
+  exit ${BAD}
+}
+
+function Verify(){
+  if [ $? -eq $SUCESS ]
+  then
+    echo -e "\n\033[0;32m\U00002705 Command executed with ${GREEN}success${NC}!"
+  else
+    Abort
+  fi
+}
+
+function Welcome() {
+  echo -e "\n"
+  echo "Zoho Upload" | figlet
+  echo -e "\n-------------------------------------------------"
+  echo "* Welcome ${USER}! It's now ${DATE_INFO_SHORT}"
+  echo -e "* ${DATE_INFO}"
+  echo -e "* System - ${OS}"
+  echo -e "*"
+  echo -e "* Autor: ${YELLOW}Lucca Pessoa da Silva Matos${YELLOW}${NC}"
+  echo -e "* Description: ${BLUE}Zoho Upload${BLUE}${NC}"
+  echo -e "* Version: ${YELLOW}${VERSION}${YELLOW}${NC}"
+  echo -e "-------------------------------------------------\n"
+}
+
+function AssertIsInstalled() {
+  local readonly PACKAGE="$1"
+  if [[ ! $(command -v ${PACKAGE}) ]]; then
+    echo -e "\n${RED}ERROR: The binary '${PACKAGE}' is required by this script but is not installed or in the system's PATH.${NC}\n"
+    exit 1
+  fi
+}
+
+function CheckCommomParams() {
+  [ ! "${AUTHTOKEN}" ] && [ "${AUTHTOKEN}" == "" ] && \
+      { echo -e "\n${RED}Zoho token is empty or not exist. Bye Bye!${NC}"; exit 1; } || \
+          echo -e "${GREEN}\U00002705 Zoho token exist and is not empty${NC}"
+  [ ! "${USER_EMAIL_ADDRESS}" ] && [ "${USER_EMAIL_ADDRESS}" == "" ] && \
+      { echo -e "\n${RED}Zoho user email is empty or not exist. Bye Bye!${NC}"; exit 1; } || \
+          echo -e "${GREEN}\U00002705 Zoho user email exist and is not empty${NC}"
+  [ ! "${DBOWNER_EMAIL_ADDRESS}" ] && [ "${DBOWNER_EMAIL_ADDRESS}" == "" ] && \
+      { echo -e "\n${RED}Zoho dbowner email is empty or not exist. Bye Bye!${NC}"; exit 1; } || \
+          echo -e "${GREEN}\U00002705 Zoho dbowner email exist and is not empty${NC}"
+}
+
+# ==============================================================================
+# MAIN
+# ==============================================================================
+
+Welcome && AssertIsInstalled "figlet" && CheckCommomParams
+
+Status "${GREEN}STEP 1: ${NC}Modifying commom params..."
+
+sed -i "s/USER_EMAIL_ADDRESS=/USER_EMAIL_ADDRESS=${USER_EMAIL_ADDRESS}/g" ${COMMON_PARAMS}
+sed -i "s/AUTHTOKEN=/AUTHTOKEN=${AUTHTOKEN}/g" ${COMMON_PARAMS}
+sed -i "s/DBOWNER_EMAIL_ADDRESS=/DBOWNER_EMAIL_ADDRESS=${DBOWNER_EMAIL_ADDRESS}/g" ${COMMON_PARAMS}
+
+Status "${GREEN}STEP 2: ${NC}Running Zoho Upload...\n"
+
+find ${ZOHO_BIN} -type f -name "UploadFromDB_*.sh" -print | sort -z | bash
+
+Verify
