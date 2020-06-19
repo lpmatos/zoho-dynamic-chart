@@ -135,7 +135,7 @@ global:
 
 ### Helm
 
-![Alt text](docs/HELM.PNG?raw=true "Helm")
+![Alt text](docs/HELM.png?raw=true "Helm")
 
 ### Links
 
